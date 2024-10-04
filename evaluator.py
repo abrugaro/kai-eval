@@ -1,20 +1,20 @@
 #!/bin/env python
+import os
 import re
 import yaml
 import pydantic
 import argparse
 from typing import List
 from dataclasses import dataclass, field
-from langchain_aws import ChatBedrock
 from langchain.output_parsers import YamlOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser, BaseTransformOutputParser
 
+from kai.models.kai_config import KaiConfig
+from kai.service.llm_interfacing.model_provider import ModelProvider
 from prompts import JUDGE_PROMPT, RESULT_PROMPT, LANGCHAIN_PROMPT_TEMPLATE
 
-MODEL = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-# MODEL="meta.llama3-70b-instruct-v1:0",
 
 @dataclass
 class LLMResult:
@@ -109,8 +109,9 @@ class EvaluationOutputParser(BaseTransformOutputParser[str]):
 
 class Evaluator:
 
-    def __init__(self, llm):
-        self.llm = llm
+    def __init__(self, config: KaiConfig):
+        self.config = config
+        self.model_provider = ModelProvider(config.models)
 
     def evaluate(self, prompt_vars: PromptVars, llm_result: LLMResult) -> EvaluationResult:
         """
@@ -118,7 +119,7 @@ class Evaluator:
 
         """
 
-        chain = self.llm | StrOutputParser()
+        chain = self.model_provider.llm | StrOutputParser()
         response = chain.invoke(render_messages(prompt_vars, llm_result))
         extracted = extract_yaml_from_text(response)
         return EvaluationResult(
@@ -148,7 +149,7 @@ class Evaluator:
             input_variables=["query", "source", "target", "language"],
             partial_variables={"format_instructions": parser.get_format_instructions()}
         )
-        chain = prompt | self.llm | parser
+        chain = prompt | self.model_provider.llm | parser
         result = chain.invoke(
             {"query": query,
              "source": prompt_vars.source,
@@ -181,12 +182,12 @@ def extract_yaml_from_text(text: str) -> dict:
             # Parse the YAML content
             data = yaml.safe_load(yaml_content)
             return data
-        except yaml.YAMLError as exc:
-            print("Error parsing YAML:", exc)
-            return None
+        except yaml.YAMLError as e:
+            print("Error parsing YAML:", e)
+            return {}
     else:
         print("No YAML block found.")
-        return None
+        return {}
 
 
 def render_messages(prompt_vars: PromptVars, llm_results: LLMResult) -> list:
@@ -217,21 +218,23 @@ def render_messages(prompt_vars: PromptVars, llm_results: LLMResult) -> list:
     return messages
 
 
+def get_config(config_path: str) -> KaiConfig:
+    if not os.path.exists(config_path):
+        raise FileNotFoundError("Config file not found.")
+    return KaiConfig.model_validate_filepath(config_path)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--language", dest="language", default="Java")
     parser.add_argument("-s", "--source", dest="source_technology", default="JavaEE")
     parser.add_argument("-t", "--target", dest="target_technology", default="Quarkus")
+    parser.add_argument("-c", "--config", default="config.toml")
     parser.add_argument("input_file")
     parser.add_argument("output_file")
     args = parser.parse_args()
-
-    llm = ChatBedrock(
-        model_id=MODEL,
-        region_name="us-east-1",
-        model_kwargs={"temperature": 0.1}
-    )
-    evaluator = Evaluator(llm=llm)
+    config = get_config(args.config)
+    evaluator = Evaluator(config)
 
     results = []
     k = None
