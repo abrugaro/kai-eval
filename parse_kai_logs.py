@@ -135,8 +135,8 @@ def find_llm_results_with_prompt_vars(root_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", default="logs/trace")
-    parser.add_argument("output_file")
+    parser.add_argument("input_dir", default="logs/trace", help="path to Kai logs/trace directory")
+    parser.add_argument("output_file", help="path to write unified request/result yaml")
     args = parser.parse_args()
 
     output = find_llm_results_with_prompt_vars(args.input_dir)

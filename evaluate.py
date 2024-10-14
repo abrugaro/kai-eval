@@ -1,6 +1,7 @@
 #!/bin/env python
 import os
 import re
+import sys
 import yaml
 import pydantic
 import argparse
@@ -11,6 +12,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser, BaseTransformOutputParser
 
+sys.path.append("../kai")
 from kai.models.kai_config import KaiConfig
 from kai.service.llm_interfacing.model_provider import ModelProvider
 from prompts import JUDGE_PROMPT, RESULT_PROMPT, LANGCHAIN_PROMPT_TEMPLATE
@@ -34,6 +36,7 @@ class PromptVars:
 
 
 class EvaluationResult(pydantic.BaseModel):
+    filename: str
     effectiveness: int = pydantic.Field(
         description="A grade from 0 to 10 of how effectively the changes migrate the file from the source technology "
                     "to the target technology."
@@ -123,6 +126,7 @@ class Evaluator:
         response = chain.invoke(render_messages(prompt_vars, llm_result))
         extracted = extract_yaml_from_text(response)
         return EvaluationResult(
+            filename=prompt_vars.filename,
             effectiveness=extracted["effectiveness"],
             specificity=extracted["specificity"],
             reasoning=extracted["reasoning"],
@@ -171,23 +175,25 @@ def extract_yaml_from_text(text: str) -> dict:
         dict: The parsed YAML content as a dictionary, or None if not found.
     """
     # Regular expression to find triple backtick-enclosed YAML blocks
-    pattern = r'```yaml\n(.*?)\n```'
+    pattern = r'```(yaml)?\n(.*?)\n```'
 
     # Search for the YAML block
     match = re.search(pattern, text, re.DOTALL)
 
     if match:
-        yaml_content = match.group(1)
+        yaml_content = match.group(2)
         try:
+            print(yaml_content)
             # Parse the YAML content
             data = yaml.safe_load(yaml_content)
             return data
         except yaml.YAMLError as e:
             print("Error parsing YAML:", e)
-            return {}
+            raise e
     else:
         print("No YAML block found.")
-        return {}
+        print(text)
+        raise ValueError("No YAML block found.")
 
 
 def render_messages(prompt_vars: PromptVars, llm_results: LLMResult) -> list:
@@ -230,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--source", dest="source_technology", default="JavaEE")
     parser.add_argument("-t", "--target", dest="target_technology", default="Quarkus")
     parser.add_argument("-c", "--config", default="config.toml")
-    parser.add_argument("input_file")
+    parser.add_argument("input_file", help="path to unified request/result file produced by parse_kai_logs.py")
     parser.add_argument("output_file")
     args = parser.parse_args()
     config = get_config(args.config)
@@ -249,9 +255,15 @@ if __name__ == "__main__":
         prompt_vars.unchanged_file = k["prompt_vars"]["src_file_contents"]
         prompt_vars.filename = k["prompt_vars"]["src_file_name"]
         llm_result = LLMResult()
-        llm_result.rationale = k["llm_results"]["reasoning"]
-        llm_result.updated_file = k["llm_results"]["updated_file"]
-        result = evaluator.evaluate(prompt_vars, llm_result)
-        results.append(result.__dict__)
+        llm_result.rationale = k["llm_results"].get("reasoning", "")
+        llm_result.updated_file = k["llm_results"].get("updated_file", "")
+        if llm_result.rationale == "" or llm_result.updated_file == "":
+            print("no fix for file: ", prompt_vars.filename)
+            continue
+        try:
+            result = evaluator.evaluate(prompt_vars, llm_result)
+            results.append(result.__dict__)
+        except:
+            print("Couldn't evaluate response for file: ", prompt_vars.filename)
     with open(args.output_file, "w") as f:
         yaml.dump(results, f)

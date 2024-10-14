@@ -22,8 +22,12 @@ in the original file.
 Your output should be in the form of a report card written in YAML. The first four metrics should be a score out of 10,
 and the other two criteria should be pass/fail. As part of the report card, provide your full notes in detail.
 
-Here is an example output with made up numbers:
+Below is an example output with made up numbers. The field names in the YAML report card MUST match the example, and all
+fields must be present. The YAML report card MUST be surrounded by triple backticks. The detailed_notes MUST be presented
+as a YAML multiline string. Ensure that the entire report card is valid YAML. DO NOT forget to close the YAML report card
+with triple backticks.
 
+```yaml
 ```
 ---
 filename: {{ filename }}
@@ -35,6 +39,7 @@ reasoning: 7
 valid_code: true
 unnecessary_changes: false
 detailed_notes: |> evaluation of the work goes here.
+```
 ```
 
 
