@@ -1,7 +1,5 @@
 # Kai Evaluator
 
----------------
-
 ## Overview
 
 This repository contains scripts that can be used to grade Kai's
