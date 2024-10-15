@@ -20,6 +20,7 @@ if __name__ == "__main__":
     with open(args.output_file, 'w') as output_file:
         writer = csv.writer(output_file)
         writer.writerow([
+            "File",
             "Effectiveness",
             "Specificity",
             "Reasoning",
@@ -29,6 +30,7 @@ if __name__ == "__main__":
             "Average Score"])
         for evaluation in evaluations:
             row = [
+                evaluation["filename"],
                 evaluation["effectiveness"],
                 evaluation["specificity"],
                 evaluation["reasoning"],
@@ -36,6 +38,6 @@ if __name__ == "__main__":
                 evaluation["valid_code"],
                 evaluation["unnecessary_changes"]
             ]
-            avg = sum(row[0:4]) / 4.0
+            avg = sum(row[1:5]) / 4.0
             row.append(avg)
             writer.writerow(row)

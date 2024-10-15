@@ -131,8 +131,8 @@ class Evaluator:
             specificity=extracted["specificity"],
             reasoning=extracted["reasoning"],
             competency=extracted["competency"],
-            valid_code=extracted["valid_code"] == "true",
-            unnecessary_changes=extracted["unnecessary_changes"] == "true",
+            valid_code=extracted["valid_code"].lower().strip() == "true",
+            unnecessary_changes=extracted["unnecessary_changes"].lower().strip() == "true",
             detailed_notes=extracted["detailed_notes"]
         )
 
@@ -250,7 +250,7 @@ if __name__ == "__main__":
         prompt_vars = PromptVars()
         prompt_vars.source = args.source_technology
         prompt_vars.target = args.target_technology
-        prompt_vars.language = args.language
+        prompt_vars.language = k["prompt_vars"]["src_file_language"]
         prompt_vars.incidents = k["prompt_vars"]["incidents"]
         prompt_vars.unchanged_file = k["prompt_vars"]["src_file_contents"]
         prompt_vars.filename = k["prompt_vars"]["src_file_name"]
