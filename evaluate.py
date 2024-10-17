@@ -103,8 +103,8 @@ class EvaluationOutputParser(BaseTransformOutputParser[str]):
         result.specificity = extracted["specificity"]
         result.reasoning = extracted["reasoning"]
         result.competency = extracted["competency"]
-        result.valid_code = extracted["valid_code"] == "true"
-        result.unnecessary_changes = extracted["unnecessary_changes"] == "true"
+        result.valid_code = extracted["valid_code"]
+        result.unnecessary_changes = extracted["unnecessary_changes"]
         result.detailed_notes = extracted["detailed_notes"]
 
         return result
@@ -131,8 +131,8 @@ class Evaluator:
             specificity=extracted["specificity"],
             reasoning=extracted["reasoning"],
             competency=extracted["competency"],
-            valid_code=extracted["valid_code"].lower().strip() == "true",
-            unnecessary_changes=extracted["unnecessary_changes"].lower().strip() == "true",
+            valid_code=extracted["valid_code"],
+            unnecessary_changes=extracted["unnecessary_changes"],
             detailed_notes=extracted["detailed_notes"]
         )
 
@@ -263,7 +263,7 @@ if __name__ == "__main__":
         try:
             result = evaluator.evaluate(prompt_vars, llm_result)
             results.append(result.__dict__)
-        except:
+        except BaseException:
             print("Couldn't evaluate response for file: ", prompt_vars.filename)
     with open(args.output_file, "w") as f:
         yaml.dump(results, f)
