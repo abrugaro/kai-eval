@@ -5,6 +5,7 @@ import sys
 import yaml
 import pydantic
 import argparse
+import traceback
 from typing import List
 from dataclasses import dataclass, field
 from langchain.output_parsers import YamlOutputParser
@@ -265,5 +266,6 @@ if __name__ == "__main__":
             results.append(result.__dict__)
         except BaseException:
             print("Couldn't evaluate response for file: ", prompt_vars.filename)
+            print(traceback.format_exc())
     with open(args.output_file, "w") as f:
         yaml.dump(results, f)
