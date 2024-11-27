@@ -14,8 +14,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser, BaseTransformOutputParser
 
 sys.path.append("../kai")
-from kai.models.kai_config import KaiConfig
-from kai.service.llm_interfacing.model_provider import ModelProvider
+from kai.kai_config import KaiConfig
+from kai.llm_interfacing.model_provider import ModelProvider
 from prompts import JUDGE_PROMPT, RESULT_PROMPT, LANGCHAIN_PROMPT_TEMPLATE
 
 
