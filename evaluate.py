@@ -227,7 +227,7 @@ def render_messages(prompt_vars: PromptVars, llm_results: LLMResult) -> list:
 
 def get_config(config_path: str) -> KaiConfig:
     if not os.path.exists(config_path):
-        raise FileNotFoundError("Config file not found.")
+        raise FileNotFoundError(f"Config file {config_path} not found.")
     return KaiConfig.model_validate_filepath(config_path)
 
 

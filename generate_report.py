@@ -73,6 +73,9 @@ def generate_json_report(evaluations, output):
 
         data.append(row)
 
+    if not data:
+        raise ValueError("No incidents were reported")
+
     total_incidents = len(data)
     averages = {
         "averageEffectiveness": round(total_effectiveness / total_incidents, 1),
