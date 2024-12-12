@@ -4,6 +4,9 @@ import os
 import yaml
 import re
 import argparse
+from collections import defaultdict
+
+from git import Repo
 
 
 def parse_llm_result(content):
@@ -133,12 +136,57 @@ def find_llm_results_with_prompt_vars(root_dir):
     return output_yaml
 
 
+def parse_analysis_output_and_changes(analysis_file_path: str, repo_path: str):
+    file_incidents_map = map_analysis_output_by_file(analysis_file_path)
+    repo = Repo(repo_path)
+
+    for modified_file in repo.index.diff(None):
+        print(modified_file.a_path)
+        file_path = repo.working_dir + "/" + modified_file.a_path
+        for uri in file_incidents_map:
+            if uri.endswith(modified_file.a_path):
+                diff = repo.git.diff(modified_file.a_path)
+                file_incidents_map[uri]["diff"] = diff
+
+    return file_incidents_map
+
+
+
+def map_analysis_output_by_file(analysis_file_path: str):
+    with open(analysis_file_path) as analysis_output_f:
+        output_yaml = yaml.safe_load(analysis_output_f)
+
+    file_incidents_map = defaultdict(lambda: {"incidents": []})
+    for top_level_value in output_yaml:
+        if not isinstance(top_level_value, dict) or "violations" not in top_level_value:
+            continue
+        violations = top_level_value["violations"]
+
+        for violation_key, violation_value in violations.items():
+            if not isinstance(violation_value, dict) or "incidents" not in violation_value:
+                continue
+
+            for incident in violation_value["incidents"]:
+                uri = incident.get("uri")
+                # Ignore non-project files, TODO (abrugaro) check if this works in Windows
+                if not uri or uri.startswith("file:///root/.m2"):
+                    continue
+
+                if uri not in file_incidents_map:
+                    file_incidents_map[uri] = {"incidents": []}
+                file_incidents_map[uri]["incidents"].append(incident)
+
+    file_incidents_map = dict(file_incidents_map)
+
+    return file_incidents_map
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", default="logs/trace", help="path to Kai logs/trace directory")
-    parser.add_argument("output_file", help="path to write unified request/result yaml")
+    parser.add_argument("analysis_output_file", help="path to analysis output yaml file")
+    parser.add_argument("repository_path", help="path to repository with updated changes")
+    parser.add_argument("output_file", help="path to write unified result yaml")
     args = parser.parse_args()
-
-    output = find_llm_results_with_prompt_vars(args.input_dir)
+    output = parse_analysis_output_and_changes(args.analysis_output_file, args.repository_path)
     with open(args.output_file, "w") as outfile:
         yaml.dump(output, outfile)

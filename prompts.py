@@ -57,21 +57,11 @@ Model: {{ model }}
 
 {{ incidents }}
 
-## Original Input File
-
 Filename: {{ filename }}
 
-```
-{{ input_file }}
-```
+## File Diff
 
-## Change Rationale
-
-{{ rationale }}
-
-## File with Changes
-
-{{ updated_file }}
+{{ diff }}
 """
 
 JUDGE_PROMPT = jinja2.Template(JUDGE_TEMPLATE)

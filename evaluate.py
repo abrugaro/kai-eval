@@ -21,8 +21,7 @@ from prompts import JUDGE_PROMPT, RESULT_PROMPT, LANGCHAIN_PROMPT_TEMPLATE
 
 @dataclass
 class LLMResult:
-    rationale: str = ""
-    updated_file: str = ""
+    diff: str = ""
 
 
 @dataclass
@@ -32,7 +31,6 @@ class PromptVars:
     source: str = ""
     target: str = ""
     filename: str = ""
-    unchanged_file: str = ""
     incidents: list = field(default_factory=list)
 
 
@@ -214,9 +212,7 @@ def render_messages(prompt_vars: PromptVars, llm_results: LLMResult) -> list:
         model=prompt_vars.model,
         filename=prompt_vars.filename,
         incidents=prompt_vars.incidents,
-        input_file=prompt_vars.unchanged_file,
-        rationale=llm_results.rationale,
-        updated_file=llm_results.updated_file
+        updated_file=llm_results.diff
     )
     messages = [
         SystemMessage(content=judge),
@@ -237,7 +233,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--source", dest="source_technology", default="JavaEE")
     parser.add_argument("-t", "--target", dest="target_technology", default="Quarkus")
     parser.add_argument("-c", "--config", default="config.toml")
-    parser.add_argument("input_file", help="path to unified request/result file produced by parse_kai_logs.py")
+    parser.add_argument("input_file", help="path to unified result file produced by parse_kai_logs.py")
     parser.add_argument("output_file")
     args = parser.parse_args()
     config = get_config(args.config)
@@ -247,20 +243,19 @@ if __name__ == "__main__":
     k = None
     with open(args.input_file) as f:
         ks = yaml.safe_load(f)
-    for k in ks:
+    for file_uri, v in ks.items():
+        if 'diff' not in v or v['diff'] == "":
+            print(f"No fix for file: {file_uri}")
+            continue
         prompt_vars = PromptVars()
         prompt_vars.source = args.source_technology
         prompt_vars.target = args.target_technology
-        prompt_vars.language = k["prompt_vars"]["src_file_language"]
-        prompt_vars.incidents = k["prompt_vars"]["incidents"]
-        prompt_vars.unchanged_file = k["prompt_vars"]["src_file_contents"]
-        prompt_vars.filename = k["prompt_vars"]["src_file_name"]
+        prompt_vars.language = args.language
+        prompt_vars.incidents = v['incidents']
+        prompt_vars.filename = file_uri
         llm_result = LLMResult()
-        llm_result.rationale = k["llm_results"].get("reasoning", "")
-        llm_result.updated_file = k["llm_results"].get("updated_file", "")
-        if llm_result.rationale == "" or llm_result.updated_file == "":
-            print("no fix for file: ", prompt_vars.filename)
-            continue
+        llm_result.diff = v['diff']
+
         try:
             result = evaluator.evaluate(prompt_vars, llm_result)
             results.append(result.__dict__)
