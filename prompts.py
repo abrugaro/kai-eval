@@ -9,9 +9,6 @@ Your current job is to review the changes made by the LLM, and evaluate how effe
 1) How specifically the changes match the recommendations made by Konveyor.
 2) How competently the changes follow {{ language }} and {{ target }} best practice.
 3) How effectively the changes are at successfully migrating the file from {{ source }} to {{ target }}.
-4) How correctly the reasoning provided by the LLM assistant explains the changes and the reason for them.
-When evaluating its rationale critically, use your best judgement, domain expertise in migrating
-enterprise {{ language }} applications, and knowledge of best practice.
 
 It is also critically important that the LLM makes the minimum number of changes necessary to correct the problem
 identified by Konveyor, have avoided making unnecessary or superfluous changes, and the code must remain syntactically
@@ -35,17 +32,15 @@ model: {{ model }}
 specificity: 7
 competency: 7
 effectiveness: 7
-reasoning: 7
 valid_code: true
 unnecessary_changes: false
-detailed_notes: |> evaluation of the work goes here.
+detailed_notes: evaluation of the work goes here.
 ```
 ```
 
 
 The LLM assistant will provide you with the original, unchanged file it was working on,
-the list of incidents generated from Konveyor, the assistant's rationale for the changes it made,
-and finally the file with the assistant's changes applied to it.
+the list of incidents generated from Konveyor and the diff of the with the assistant's changes applied to it.
 """
 
 RESULT_TEMPLATE = """
@@ -76,9 +71,6 @@ changes made by the LLM, and evaluate how effective the changes are on four metr
 1) How well the changes match the recommendations made by Konveyor.
 2) How well the changes follow {language} and {target} best practice.
 3) How well the changes do at successfully migrating the file from {source} to {target}. 
-4) How correctly the rationale provided by the LLM assistant explains the changes and the reason for them. When 
-evaluating its rationale critically, use your best judgement, domain expertise in migrating enterprise {language} 
-applications, and knowledge of best practice.
 
 It is also critically important that the LLM makes the minimum number of changes necessary to correct the problem 
 identified by Konveyor, have avoided making unnecessary or superfluous changes, and the code must remain 
@@ -87,8 +79,7 @@ carefully to be sure that the LLM did what it said. If the LLM assistant says it
 actually there in the original file.
 
 The LLM assistant will provide you with the original, unchanged file it was working on,
-the list of incidents generated from Konveyor, the assistant's rationale for the changes it made,
-and finally the file with the assistant's changes applied to it.
+the list of incidents generated from Konveyor and the diff of the with the assistant's changes applied to it.
 
 Your output should be in the form of a report card written in YAML. The first four metrics should be a score out of 10,
 and the other two criteria should be pass/fail. As part of the report card, provide your full notes in detail.
@@ -99,16 +90,14 @@ Here is an example output with made up numbers:
 specificity: 7
 competency: 7
 effectiveness: 7
-reasoning: 7
 valid_code: true
 unnecessary_changes: false
-detailed_notes: |> evaluation of the work goes here.
+detailed_notes: evaluation of the work goes here.
 ```
 
 
 The LLM assistant will provide you with the original, unchanged file it was working on,
-the list of incidents generated from Konveyor, the assistant's rationale for the changes it made,
-and finally the file with the assistant's changes applied to it.
+the list of incidents generated from Konveyor and the diff of the with the assistant's changes applied to it.
 
 {query}
 """
