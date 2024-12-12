@@ -18,7 +18,6 @@ def generate_csv_report(evaluations, output):
             "File",
             "Effectiveness",
             "Specificity",
-            "Reasoning",
             "Competency",
             "Valid Code",
             "Unnecessary Changes",
@@ -28,7 +27,6 @@ def generate_csv_report(evaluations, output):
                 evaluation["filename"],
                 evaluation["effectiveness"],
                 evaluation["specificity"],
-                evaluation["reasoning"],
                 evaluation["competency"],
                 evaluation["valid_code"],
                 evaluation["unnecessary_changes"]
@@ -44,7 +42,6 @@ def generate_json_report(evaluations, output):
     data = []
     total_effectiveness = 0
     total_specificity = 0
-    total_reasoning = 0
     total_competency = 0
     total_average_score = 0
 
@@ -53,7 +50,6 @@ def generate_json_report(evaluations, output):
             "file": evaluation["filename"],
             "effectiveness": evaluation["effectiveness"],
             "specificity": evaluation["specificity"],
-            "reasoning": evaluation["reasoning"],
             "competency": evaluation["competency"],
             "validCode": evaluation["valid_code"],
             "unnecessaryChanges": evaluation["unnecessary_changes"],
@@ -61,13 +57,11 @@ def generate_json_report(evaluations, output):
         row["averageScore"] = round(sum([
             row["effectiveness"],
             row["specificity"],
-            row["reasoning"],
             row["competency"]
         ]) / 4.0, 1)
 
         total_effectiveness += row["effectiveness"]
         total_specificity += row["specificity"]
-        total_reasoning += row["reasoning"]
         total_competency += row["competency"]
         total_average_score += row["averageScore"]
 
@@ -80,7 +74,6 @@ def generate_json_report(evaluations, output):
     averages = {
         "averageEffectiveness": round(total_effectiveness / total_incidents, 1),
         "averageSpecificity": round(total_specificity / total_incidents, 1),
-        "averageReasoning": round(total_reasoning / total_incidents, 1),
         "averageCompetency": round(total_competency / total_incidents, 1),
         "averageScore": round(total_average_score / total_incidents, 1),
     }

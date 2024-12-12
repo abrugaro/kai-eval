@@ -44,10 +44,6 @@ class EvaluationResult(pydantic.BaseModel):
         description="A grade from 0 to 10 of how targeted the changes are at specifically addressing the incidents "
                     "identified by Konveyor."
     )
-    reasoning: int = pydantic.Field(
-        description="A grade from 0 to 10 of how well the model under evaluation was able to explain why and how it "
-                    "made the changes."
-    )
     competency: int = pydantic.Field(
         description="A grade from 0 to 10 of how competently the changes reflect industry best practice for the "
                     "language and target technology."
@@ -67,7 +63,6 @@ class EvaluationResult(pydantic.BaseModel):
     def score_summary(self) -> float:
         score = self.effectiveness
         score += self.specificity
-        score += self.reasoning
         score += self.competency
         score /= 4.0
         return score
@@ -100,7 +95,6 @@ class EvaluationOutputParser(BaseTransformOutputParser[str]):
         result = EvaluationResult()
         result.effectiveness = extracted["effectiveness"]
         result.specificity = extracted["specificity"]
-        result.reasoning = extracted["reasoning"]
         result.competency = extracted["competency"]
         result.valid_code = extracted["valid_code"]
         result.unnecessary_changes = extracted["unnecessary_changes"]
@@ -128,7 +122,6 @@ class Evaluator:
             filename=prompt_vars.filename,
             effectiveness=extracted["effectiveness"],
             specificity=extracted["specificity"],
-            reasoning=extracted["reasoning"],
             competency=extracted["competency"],
             valid_code=extracted["valid_code"],
             unnecessary_changes=extracted["unnecessary_changes"],
